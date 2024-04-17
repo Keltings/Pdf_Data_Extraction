@@ -27,7 +27,6 @@ File Structure
 - data/: Folder to store the pdfs/ raw data
 - extraction/:  Folder to store scripts for extracting images and text
 - output/: Folder to store the generated Excel files.
-- output/: Folder to store the generated Excel files.
 - main.py: Main Python script for extracting trademarks and images.
 - README.md: Documentation file providing information about the tool and its usage.
 - requirements.txt: List of Python dependencies required for the tool.
