@@ -3,7 +3,7 @@ import re
 import pandas as pd
 from extraction.pattern import extract_info
 
-def extract_data(file_path):
+def extract_data(file_path,text_after_kenya):
     data = {
         "Trademark Number (210)": [],
         "Application Filing Date (220)": [],
@@ -52,7 +52,7 @@ def extract_data(file_path):
                     if '210' in line or '2 10' in line or '21 0' in line:
                         # If a new block starts, extract info from the previous block
                         if block:
-                            info = extract_info(block)
+                            info = extract_info(block,text_after_kenya)
                             if info:
                                 for i, key in enumerate(data.keys()):
                                     data[key].append(info[i])
@@ -64,7 +64,7 @@ def extract_data(file_path):
 
             # Extract info from the last block on the last page
             if block:
-                info = extract_info(block)
+                info = extract_info(block,text_after_kenya)
                 if info:
                     for i, key in enumerate(data.keys()):
                         data[key].append(info[i])

@@ -1,6 +1,6 @@
 import re
 
-def extract_info(block):
+def extract_info(block,text_after_kenya):
     # Regular expressions to extract information from the block
     trademark_number_match = re.search(r'(\d+)\s*\(220\)', block)
     filing_date_match = re.search(r'\(220\)[^:]*:?\s*(\d{1,2}/\d{1,2}/\d{2,4})', block)
@@ -18,23 +18,30 @@ def extract_info(block):
     image_mark = ''
 
     # Function to split text after "Kenya" and move capitalized words to Image/Mark column
-    def move_words_after_kenya(text):
-        kenya_match = re.search(r'K\s*e\s*n\s*y\s*a', text, re.IGNORECASE)
-        if kenya_match:
+    def move_words_after_kenya(text,text_after_kenya):
+        # Find all occurrences of "Kenya" in the text
+        kenya_matches = list(re.finditer(r'K\s*e\s*n\s*y\s*a', text, re.IGNORECASE))
+        if kenya_matches:
+            kenya_match = kenya_matches[-1] # Select the last occurrence of "Kenya"
             kenya_index = kenya_match.end()
             kenya_part = text[:kenya_index].strip()  # Include "Kenya" and preceding text
             words_after_kenya = text[kenya_index:].strip()
 
-            if words_after_kenya.isupper():
-                image_mark = words_after_kenya
-                return kenya_part, image_mark
+            if text_after_kenya:
+                if words_after_kenya:
+                    image_mark = words_after_kenya
+                    return kenya_part, image_mark
+            else:
+                if words_after_kenya.isupper():
+                    image_mark = words_after_kenya
+                    return kenya_part, image_mark
 
         return text, ""
 
 
     if representative:
         # Apply the move_words_after_kenya function to the Representative/Applicant (740) column
-        representative, image_mark = move_words_after_kenya(representative)
+        representative, image_mark = move_words_after_kenya(representative,text_after_kenya)
 
 
         # Move words after "None" to the Image/Mark column
