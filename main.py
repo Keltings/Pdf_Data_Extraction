@@ -1,6 +1,7 @@
 from extraction.process_pdf import process_pdf
 from combined.merged import fill_missing_images
 from openpyxl import Workbook
+import pandas as pd
 import os
 
 if __name__ == "__main__":
@@ -12,29 +13,39 @@ if __name__ == "__main__":
     for subdir in subdirectories:
         folder_path = os.path.join(main_folder_path, subdir)
         output_excel_path = f'output/{subdir}.xlsx'
+        output_excel_madrid_path = f'output/{subdir}_Madrid.xlsx'
         output_excel = Workbook()
+        output_excel_madrid = Workbook()
 
         # Remove the default "Sheet" created when Workbook is initialized
         default_sheet = output_excel.active
         output_excel.remove(default_sheet)
 
-        if int(subdir) < 2012:
-            for filename in os.listdir(folder_path):
-                if filename.endswith(".pdf"):
-                    pdf_file_path = os.path.join(folder_path, filename)
-                    df_text, df_image = process_pdf(pdf_file_path,text_after_kenya=False)
-                    fill_missing_images(df_text, df_image, output_excel, sheet_name=filename)
+        default_sheet_madrid = output_excel_madrid.active
+        output_excel_madrid.remove(default_sheet_madrid)
 
-            output_excel.save(output_excel_path)
-            print(f"Excel file for {subdir} created successfully.")
+        with pd.ExcelWriter(output_excel_madrid_path) as writer:
+            if int(subdir) < 2012:
+                for filename in os.listdir(folder_path):
+                    if filename.endswith(".pdf"):
+                        pdf_file_path = os.path.join(folder_path, filename)
+                        df_text,df_madrid_text, df_image = process_pdf(pdf_file_path,text_after_kenya=False)
+                        fill_missing_images(df_text, df_image, output_excel, sheet_name=filename)
+                        # fill_missing_images_madrid(df_madrid_text, df_madrid_image, output_excel_madrid, sheet_name=filename)
+                        df_madrid_text.to_excel(writer, sheet_name=f"{filename}", index=False)
 
-        else:
-            for filename in os.listdir(folder_path):
-                if filename.endswith(".pdf"):
-                    pdf_file_path = os.path.join(folder_path, filename)
-                    df_text, df_image = process_pdf(pdf_file_path,text_after_kenya=True)
-                    fill_missing_images(df_text, df_image, output_excel, sheet_name=filename)
+                output_excel.save(output_excel_path)
+                print(f"Excel file for {subdir} created successfully.")
 
-            output_excel.save(output_excel_path)
-            print(f"Excel file for {subdir} created successfully.")
-            
+            else:
+                for filename in os.listdir(folder_path):
+                    if filename.endswith(".pdf"):
+                        pdf_file_path = os.path.join(folder_path, filename)
+                        df_text,df_madrid_text, df_image = process_pdf(pdf_file_path,text_after_kenya=True)
+                        # fill_missing_images(df_text, df_image, df_madrid_text, df_madrid_image, output_excel, sheet_name=filename)
+                        df_madrid_text.to_excel(writer, sheet_name=f"{filename}_Madrid", index=False)
+
+                output_excel.save(output_excel_path)
+                print(f"Excel file for {subdir} created successfully.")
+
+                

@@ -2,6 +2,7 @@ import PyPDF2
 import re
 import pandas as pd
 from extraction.pattern import extract_info
+from extraction.madrid import extract_madrid
 
 def extract_data(file_path,text_after_kenya):
     data = {
@@ -13,6 +14,14 @@ def extract_data(file_path,text_after_kenya):
         "Image/Mark": []
     }
 
+    madrid_data = {
+        "Trademark Number (210)": [],
+        "Application Filing Date (151)": [],
+        "Class of registration (511)": [],
+        "Representative/Applicant (732)": [],
+        "Image/Mark": []
+    }
+
     try:
         # Open the PDF file
         with open(file_path, 'rb') as file:
@@ -21,6 +30,7 @@ def extract_data(file_path,text_after_kenya):
             num_pages = len(pdf_reader.pages)
 
             block = ''  # Initialize block
+            madrid_block = ''
             # Iterate over pages
             for page_idx in range(num_pages):
                 # Extract text content from page
@@ -58,9 +68,18 @@ def extract_data(file_path,text_after_kenya):
                                     data[key].append(info[i])
                         # Start a new block
                         block = line
+
+                        if madrid_block:
+                            info = extract_madrid(madrid_block)
+                            if info:
+                                for i,key in enumerate(madrid_data.keys()):
+                                    madrid_data[key].append(info[i])
+                        madrid_block = line
+
                     else:
                         # Append line to the current block
                         block += ' ' + line
+                        madrid_block += ' ' + line
 
             # Extract info from the last block on the last page
             if block:
@@ -68,12 +87,21 @@ def extract_data(file_path,text_after_kenya):
                 if info:
                     for i, key in enumerate(data.keys()):
                         data[key].append(info[i])
+            
+            if madrid_block:
+                info = extract_madrid(madrid_block)
+                if info:
+                    for i,key in enumerate(madrid_data.keys()):
+                        madrid_data[key].append(info[i])
 
     except Exception as e:
         print(f"Error occurred: {e}")
 
     if not data:
         print("No data found within the specified page range.")
+
+    if not madrid_data:
+        print("No Madrid System data found within the specified page range.")
 
     # Function to remove commas from the Image/Mark column
     def remove_commas_and_fullstops(text):
@@ -84,7 +112,11 @@ def extract_data(file_path,text_after_kenya):
     df = pd.DataFrame(data)
     df.replace('', pd.NA, inplace=True)
 
-    # Drop rows with data only in one column
-    df = df.dropna(subset=df.columns, thresh=2)
+    madrid_df = pd.DataFrame(madrid_data)
+    madrid_df.replace('', pd.NA, inplace=True)
 
-    return df
+    # Drop rows with missing data
+    madrid_df.dropna(subset=['Trademark Number (210)', 'Application Filing Date (151)', 'Representative/Applicant (732)'], inplace=True)
+
+
+    return df, madrid_df
