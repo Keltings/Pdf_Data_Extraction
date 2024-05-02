@@ -109,14 +109,14 @@ def extract_data(file_path,text_after_kenya):
     
     data["Image/Mark"] = [remove_commas_and_fullstops(text) for text in data["Image/Mark"]]
 
-    df = pd.DataFrame(data)
-    df.replace('', pd.NA, inplace=True)
+    df_image = pd.DataFrame(data)
+    df_image.replace('', pd.NA, inplace=True)
 
-    madrid_df = pd.DataFrame(madrid_data)
-    madrid_df.replace('', pd.NA, inplace=True)
+    df_madrid = pd.DataFrame(madrid_data)
+    df_madrid.replace('', pd.NA, inplace=True)
 
     # Drop rows with missing data
-    madrid_df.dropna(subset=['Trademark Number (210)', 'Application Filing Date (151)', 'Representative/Applicant (732)'], inplace=True)
+    df_madrid.dropna(subset=['Trademark Number (210)', 'Application Filing Date (151)', 'Representative/Applicant (732)'], inplace=True)
 
 
-    return df, madrid_df
+    return df_image, df_madrid

@@ -14,7 +14,7 @@ def fill_missing_images(text_df, images_df, output_excel, sheet_name):
     # Dictionary to store trademark numbers and corresponding images
     image_data = {}
 
-    # Extract trademark numbers and images from the images dataframe
+    # Extract trademark numbers and images from the images dataframes
     for index, row in images_df.iterrows():
         trademark_number = row['TrademarkNo']
         image_bytes = row['ImageData']
@@ -33,7 +33,7 @@ def fill_missing_images(text_df, images_df, output_excel, sheet_name):
                 if image_bytes:
                     img_buffer = BytesIO(image_bytes)
                     pil_image = PILImage.open(img_buffer)
-                    img_xl = XLImage(img_buffer)
+                    img_xl = XLImage(pil_image)
                     cell = ws_output.cell(row=index+2, column=text_df.columns.get_loc('Image/Mark') + 1)  # Assuming Image/Mark is in the dataframe
                     ws_output.add_image(img_xl, cell.coordinate)
 
@@ -72,7 +72,7 @@ def fill_missing_images_madrid(text_df, images_df, output_excel, sheet_name):
                 if image_bytes:
                     img_buffer = BytesIO(image_bytes)
                     pil_image = PILImage.open(img_buffer)
-                    img_xl = XLImage(img_buffer)
+                    img_xl = XLImage(pil_image)
                     cell = ws_output.cell(row=index+2, column=text_df.columns.get_loc('Image/Mark') + 1)  # Assuming Image/Mark is in the dataframe
                     ws_output.add_image(img_xl, cell.coordinate)
 
