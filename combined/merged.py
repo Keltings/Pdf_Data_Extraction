@@ -81,3 +81,18 @@ def fill_missing_images_madrid(text_df, images_df, output_excel, sheet_name):
             if pd.notnull(value):
                 ws_output.cell(row=index+2, column=col_idx, value=value)
 
+def fill_industrial(text_df, output_excel, sheet_name):
+    # Create a new workbook for the output
+    ws_output = output_excel.create_sheet(title=sheet_name)
+
+    # Add headers from the text dataframe
+    for col_idx, col_name in enumerate(text_df.columns, start=1):
+        ws_output.cell(row=1, column=col_idx, value=col_name)
+    
+    # Iterate over rows in the text dataframe
+    for index, row in text_df.iterrows():
+        # Copy the existing row from text dataframe
+        for col_idx, value in enumerate(row, start=1):
+            if pd.notnull(value):
+                ws_output.cell(row=index+2, column=col_idx, value=value)
+

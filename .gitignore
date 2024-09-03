@@ -1,4 +1,8 @@
+__pycache__/
+combined/__pycache__/
+extraction/__pycache__/
 data/
 output/
 text/
 venv/
+test/

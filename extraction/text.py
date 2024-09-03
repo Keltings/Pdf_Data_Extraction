@@ -3,6 +3,7 @@ import re
 import pandas as pd
 from extraction.pattern import extract_info
 from extraction.madrid import extract_madrid
+from extraction.industrial_design import extract_industrial_design
 
 def extract_data(file_path,text_after_kenya):
     data = {
@@ -22,6 +23,16 @@ def extract_data(file_path,text_after_kenya):
         "Image/Mark": []
     }
 
+    industrial_data = {
+        " Application no. (21)" : [],
+        "Application Filing Date (22)": [],
+        "Class of registration (51)"  : [],
+        "Creator(s) (72)" : [],
+        "Applicant(s) (73)" : [],
+        "Title (54)" : []
+
+    }
+
     try:
         # Open the PDF file
         with open(file_path, 'rb') as file:
@@ -29,8 +40,10 @@ def extract_data(file_path,text_after_kenya):
             pdf_reader = PyPDF2.PdfReader(file)
             num_pages = len(pdf_reader.pages)
 
-            block = ''  # Initialize block
+            block = ''  
             madrid_block = ''
+            industrial_block = ''
+
             # Iterate over pages
             for page_idx in range(num_pages):
                 # Extract text content from page
@@ -49,16 +62,29 @@ def extract_data(file_path,text_after_kenya):
                         r'\(\d+\) KE - Industrial Property Journal - No\. \d+/\d+ \d+/\d+/\d+',  
                     ]
                     return any(re.search(pattern, line) for pattern in header_patterns)
-
-                # Filter out lines that are headers, consist of only digits, contain "Page",
+                ___               
+                 # Filter out lines that are headers, consist of only digits, contain "Page",
                 # or consist of only underscores
                 lines = [re.sub(r'_+', '', line) for line in lines if not is_header(line) 
                         and not line.isdigit() 
                         and "Page" not in line 
                         and not all(c == '_' for c in line.strip())]
-
+                
                 # Iterate over filtered lines
                 for line in lines:
+                    if '21' in line:
+                        # If a new block starts, extract info from the previous block
+                        if industrial_block:
+                            info = extract_industrial_design(industrial_block)
+                            if info:
+                                for i, key in enumerate(industrial_data.keys()):
+                                    industrial_data[key].append(info[i])
+                        # Start a new block
+                        industrial_block = line
+                    else:
+                        # Append line to the current block
+                        industrial_block += ' ' + line
+
                     if '210' in line or '2 10' in line or '21 0' in line:
                         # If a new block starts, extract info from the previous block
                         if block:
@@ -93,6 +119,12 @@ def extract_data(file_path,text_after_kenya):
                 if info:
                     for i,key in enumerate(madrid_data.keys()):
                         madrid_data[key].append(info[i])
+            if industrial_block:
+                info = extract_industrial_design(madrid_block)
+                if info:
+                    for i,key in enumerate(industrial_data.keys()):
+                        industrial_data[key].append(info[i])
+                
 
     except Exception as e:
         print(f"Error occurred: {e}")
@@ -115,8 +147,25 @@ def extract_data(file_path,text_after_kenya):
     df_madrid = pd.DataFrame(madrid_data)
     df_madrid.replace('', pd.NA, inplace=True)
 
+    df_industrial = pd.DataFrame(industrial_data)
+    df_industrial.replace('', pd.NA, inplace=True)
+
+    # Clean up 'Creator(s) (72)' column
+    df_industrial['Creator(s) (72)'] = df_industrial['Creator(s) (72)'].str.replace('Inventor(s):', '', regex=False)
+    df_industrial['Creator(s) (72)'] = df_industrial['Creator(s) (72)'].str.replace('Inventor(s)', '', regex=False)
+    df_industrial['Creator(s) (72)'] = df_industrial['Creator(s) (72)'].str.replace(':', '', regex=False)
+
+    # Clean up 'Applicant(s) (73)' column
+    df_industrial['Applicant(s) (73)'] = df_industrial['Applicant(s) (73)'].str.replace('Owner(s): ', '', regex=False)
+    df_industrial['Applicant(s) (73)'] = df_industrial['Applicant(s) (73)'].str.replace('Owner(s) ', '', regex=False)
+    df_industrial['Applicant(s) (73)'] = df_industrial['Applicant(s) (73)'].str.replace('Own er(s)', '', regex=False)
+    df_industrial['Applicant(s) (73)'] = df_industrial['Applicant(s) (73)'].str.replace(':', '', regex=False)
+
+    # Clean up 'Title (54)' column
+    df_industrial['Title (54)'] = df_industrial['Title (54)'].str.replace(':', '', regex=False)
+
+
     # Drop rows with missing data
     df_madrid.dropna(subset=['Trademark Number (210)', 'Application Filing Date (151)', 'Representative/Applicant (732)'], inplace=True)
 
-
-    return df_image, df_madrid
+    return df_image, df_madrid, df_industrial
